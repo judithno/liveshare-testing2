@@ -1,28 +1,46 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Box, OrbitControls } from "@react-three/drei";
+import * as THREE from 'three'
+import {createRoot} from 'react-dom/client'
+import extension from '@theatre/r3f/dist/extension'
 
-const Scene = () => {
-  const boxRef = useRef();
-  useFrame((state, delta) => {
-    boxRef.current.rotation.y += 0.02;
-  });
 
-  return (
-    <>
-      <Box ref={boxRef} args={[1, 1, 1]} rotation={[0.5, 0, 0]}>
-        <meshNormalMaterial />
-      </Box>
-      <ambientLight />
-    </>
-  );
-};
+//Theatre.js imports
+import {getProject} from '@theatre/core'
+import studio from '@theatre/studio'
+import { editable as e, SheetProvider } from '@theatre/r3f'
+import { PerspectiveCamera } from "@theatre/r3f";
+import demoProjectState from './state.json'
+
+studio.initialize();
+studio.extend(extension);
+
+const demoSheet = getProject('Demo Project', {state: demoProjectState}).sheet('Demo Sheet');
+
 
 const App = () => {
+  useEffect(() => {
+    demoSheet.project.ready.then(() => demoSheet.sequence.play({ iterationCount: Infinity, range: [0, 2] }));
+    console.log("playing");
+  }, [])
+
   return (
-    <Canvas camera={{ fov: 70, position: [0, 0, 3] }}>
+    <Canvas>
       <OrbitControls />
-      <Scene />
+      <SheetProvider sheet={demoSheet}>
+        <PerspectiveCamera theatreKey="Camera" makeDefault position={[5, 5, -5]} fov={75}/>
+        <ambientLight />
+        <e.pointLight theatreKey="Light" position={[10, 10, 10]} />
+        <e.mesh theatreKey="Cube">
+          <boxGeometry args={[1, 1, 1]} />
+          <meshStandardMaterial color="orange" />
+        </e.mesh>
+        <e.mesh theatreKey="Floor" >
+          <planeGeometry args={[5, 5]} />
+          <meshStandardMaterial color={"pink"} />
+        </e.mesh>
+      </SheetProvider>
     </Canvas>
   );
 };
